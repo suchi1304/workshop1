@@ -94,7 +94,7 @@ pipeline {
 
         stage('Deploy to Prod') {
             when {
-                branch 'main'
+                expression { return params.Environment == 'Prod'}
             }
             steps {
                input (
