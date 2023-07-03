@@ -84,7 +84,6 @@ pipeline {
                     steps {
                         echo 'Build'
 
-                        function_name = 'java-test'
 
                         sh "aws lambda update-function-code --function-name $function_name --region us-east-1 --s3-bucket bermtecbatch31 --s3-key sample-1.0.3.jar"
                     }
@@ -108,7 +107,6 @@ pipeline {
                 branch 'main'
             }
             steps {
-                function_name = 'java-prod'
                 sh "aws lambda update-function-code --function-name $function_name --region us-east-1 --s3-bucket bermtecbatch31 --s3-key sample-1.0.3.jar"
             }
         }
@@ -129,7 +127,6 @@ pipeline {
 
         failure {
             echo 'failed'
-            mail ()
         }
         aborted {
             echo 'aborted'
