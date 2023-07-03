@@ -3,6 +3,16 @@ pipeline {
 
     environment {
         function_name = 'java-sample'
+
+    }
+
+    parameters {
+        string(name: 'RollbackVersion', description: 'Please enter rollback version')
+        choice(
+            choices: ['Dev', 'Test', 'Prod'],
+            name: 'Environment',
+            description : 'Please select environment'
+        )
     }
 
     stages {
@@ -16,36 +26,36 @@ pipeline {
         }
 
 
-        // stage("SonarQube analysis") {
-        //     agent any
+        stage("SonarQube analysis") {
+            agent any
 
-        //     when {
-        //         anyOf {
-        //             branch 'feature/*'
-        //             branch 'main'
-        //         }
-        //     }
-        //     steps {
-        //         withSonarQubeEnv('Sonar') {
-        //             sh 'mvn sonar:sonar'
-        //         }
-        //     }
-        // }
+            when {
+                anyOf {
+                    branch 'feature/*'
+                    branch 'main'
+                }
+            }
+            steps {
+                withSonarQubeEnv('Sonar') {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
 
-        // stage("Quality Gate") {
-        //     steps {
-        //         script {
-        //             try {
-        //                 timeout(time: 10, unit: 'MINUTES') {
-        //                     waitForQualityGate abortPipeline: true
-        //                 }
-        //             }
-        //             catch (Exception ex) {
+        stage("Quality Gate") {
+            steps {
+                script {
+                    try {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            waitForQualityGate abortPipeline: true
+                        }
+                    }
+                    catch (Exception ex) {
 
-        //             }
-        //         }
-        //     }
-        // }
+                    }
+                }
+            }
+        }
 
         stage('Push') {
             steps {
@@ -71,13 +81,12 @@ pipeline {
                 }
 
                 stage('Deploy to test ') {
-                    when {
-                        branch 'main'
-                    }
                     steps {
                         echo 'Build'
 
-                        // sh "aws lambda update-function-code --function-name $function_name --region us-east-1 --s3-bucket bermtecbatch31 --s3-key sample-1.0.3.jar"
+                        function_name = 'java-test'
+
+                        sh "aws lambda update-function-code --function-name $function_name --region us-east-1 --s3-bucket bermtecbatch31 --s3-key sample-1.0.3.jar"
                     }
                 }
             }
@@ -99,6 +108,7 @@ pipeline {
                 branch 'main'
             }
             steps {
+                function_name = 'java-prod'
                 sh "aws lambda update-function-code --function-name $function_name --region us-east-1 --s3-bucket bermtecbatch31 --s3-key sample-1.0.3.jar"
             }
         }
@@ -113,12 +123,13 @@ pipeline {
         always {
             echo "${env.BUILD_ID}"
             echo "${BRANCH_NAME}"
-            echo "${BUILD_NUMBER}"
+            echo "${JENKINS_URL}"
 
         }
 
         failure {
             echo 'failed'
+            mail ()
         }
         aborted {
             echo 'aborted'
