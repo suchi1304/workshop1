@@ -22,8 +22,8 @@ node {
       def resourceGroup = 'myazureworkshop'
       def webAppName = 'java-app-test-Prod'
       // login Azure
-      withCredentials([usernamePassword(credentialsId: 'azureworkshop', passwordVariable: '3cb00d7b-c76e-42b8-9ce7-7dc5a029db37', usernameVariable: ':9fd78365-7b0e-41fe-a8f4-e36d1a546a15')]) {
-sh '''
+      withCredentials([usernamePassword(credentialsId: 'azureworkshop', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
+       sh '''
           az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET -t $AZURE_TENANT_ID
           az account set -s $AZURE_SUBSCRIPTION_ID
         '''
