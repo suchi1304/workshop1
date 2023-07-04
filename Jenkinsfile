@@ -1,127 +1,40 @@
-pipeline {
-    agent { label 'master'}
+import groovy.json.JsonSlurper
 
-    environment {
-        function_name = 'java-sample'
+def getFtpPublishProfile(def publishProfilesJson) {
+  def pubProfiles = new JsonSlurper().parseText(publishProfilesJson)
+  for (p in pubProfiles)
+    if (p['publishMethod'] == 'FTP')
+      return [url: p.publishUrl, username: p.userName, password: p.userPWD]
+}
+
+node {
+  withEnv(['AZURE_SUBSCRIPTION_ID=60bc0b8c-3ba6-4358-ad01-bcc82c7bd110',
+        'AZURE_TENANT_ID=d9dfeebf-4210-473f-980a-84fe92bc532f']) {
+    stage('init') {
+      checkout scm
     }
-
-    stages {
-
-        // CI Start
-        stage('Build') {
-            steps {
-                echo 'Build'
-                sh 'mvn package'
-            }
-        }
-
-
-        // stage("SonarQube analysis") {
-        //     agent any
-
-        //     when {
-        //         anyOf {
-        //             branch 'feature/*'
-        //             branch 'main'
-        //         }
-        //     }
-        //     steps {
-        //         withSonarQubeEnv('Sonar') {
-        //             sh 'mvn sonar:sonar'
-        //         }
-        //     }
-        // }
-
-        // stage("Quality Gate") {
-        //     steps {
-        //         script {
-        //             try {
-        //                 timeout(time: 10, unit: 'MINUTES') {
-        //                     waitForQualityGate abortPipeline: true
-        //                 }
-        //             }
-        //             catch (Exception ex) {
-
-        //             }
-        //         }
-        //     }
-        // }
-
-        stage('Push') {
-            steps {
-                echo 'Push'
-
-                sh "aws s3 cp target/sample-1.0.3.jar s3://bermtecbatch31"
-            }
-        }
-
-        // Ci Ended
-
-        // CD Started
-
-        stage('Deployments') {
-            parallel {
-
-                stage('Deploy to Dev') {
-                    steps {
-                        echo 'Build'
-
-                        sh "aws lambda update-function-code --function-name $function_name --region us-east-1 --s3-bucket bermtecbatch31 --s3-key sample-1.0.3.jar"
-                    }
-                }
-
-                stage('Deploy to test ') {
-                    when {
-                        branch 'main'
-                    }
-                    steps {
-                        echo 'Build'
-
-                        // sh "aws lambda update-function-code --function-name $function_name --region us-east-1 --s3-bucket bermtecbatch31 --s3-key sample-1.0.3.jar"
-                    }
-                }
-            }
-        }
-
-        stage('Deploy to Prod') {
-            when {
-                branch 'main'
-            }
-            steps {
-               input (
-                    message: 'Are we good for Prod Deployment ?'
-               )
-            }
-        }
-
-        stage('Release to Prod') {
-            when {
-                branch 'main'
-            }
-            steps {
-                sh "aws lambda update-function-code --function-name $function_name --region us-east-1 --s3-bucket bermtecbatch31 --s3-key sample-1.0.3.jar"
-            }
-        }
-
-
-        
-
-        // CD Ended
+  
+    stage('build') {
+      sh 'mvn clean package'
     }
-
-    post {
-        always {
-            echo "${env.BUILD_ID}"
-            echo "${BRANCH_NAME}"
-            echo "${BUILD_NUMBER}"
-
-        }
-
-        failure {
-            echo 'failed'
-        }
-        aborted {
-            echo 'aborted'
-        }
+  
+    stage('deploy') {
+      def resourceGroup = 'myazureworkshop'
+      def webAppName = 'java-app-test-Prod'
+      // login Azure
+      withCredentials([usernamePassword(credentialsId: 'workshopapp', passwordVariable: '3cb00d7b-c76e-42b8-9ce7-7dc5a029db37', usernameVariable: ':9fd78365-7b0e-41fe-a8f4-e36d1a546a15')]) {
+sh '''
+          az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET -t $AZURE_TENANT_ID
+          az account set -s $AZURE_SUBSCRIPTION_ID
+        '''
+      }
+      // get publish settings
+      def pubProfilesJson = sh script: "az webapp deployment list-publishing-profiles -g $resourceGroup -n $webAppName", returnStdout: true
+      def ftpProfile = getFtpPublishProfile pubProfilesJson
+      // upload package
+      sh "curl -T target/calculator-1.0.war $ftpProfile.url/webapps/ROOT.war -u '$ftpProfile.username:$ftpProfile.password'"
+      // log out
+      sh 'az logout'
     }
+  }
 }
