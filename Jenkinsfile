@@ -19,7 +19,7 @@ node {
     }
   
     stage('deploy') {
-      def resourceGroup = 'Workshop02_group'
+      def resourceGroup = 'Workshop02_group-bc80'
       def webAppName = 'Workshop02'
       // login Azure
       withCredentials([usernamePassword(credentialsId: 'be20c224-82f1-431c-b123-96d4939a7a9c', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
