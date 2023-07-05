@@ -19,10 +19,10 @@ node {
     }
   
     stage('deploy') {
-      def resourceGroup = 'newwork'
-      def webAppName = 'newworkshop08'
+      def resourceGroup = 'Workshop02_group'
+      def webAppName = 'Workshop02'
       // login Azure
-      withCredentials([usernamePassword(credentialsId: 'Azure_Jenkins', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
+      withCredentials([usernamePassword(credentialsId: 'be20c224-82f1-431c-b123-96d4939a7a9c', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
        sh '''
           az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET -t $AZURE_TENANT_ID
           az account set -s $AZURE_SUBSCRIPTION_ID
