@@ -8,8 +8,8 @@ def getFtpPublishProfile(def publishProfilesJson) {
 }
 
 node {
-  withEnv(['AZURE_SUBSCRIPTION_ID=0cd5d77a-66fe-45e8-b288-0ffd49b280b1',
-        'AZURE_TENANT_ID=be20c224-82f1-431c-b123-96d4939a7a9c']) {
+  withEnv(['AZURE_SUBSCRIPTION_ID=9f72d118-d6c7-4392-83cb-fcaf495b9855',
+        'AZURE_TENANT_ID=02ab6863-c3b7-458c-a98e-8e28a4106622']) {
     stage('init') {
       checkout scm
     }
@@ -19,8 +19,8 @@ node {
     }
   
     stage('deploy') {
-      def resourceGroup = 'Workshop02_group-bc80'
-      def webAppName = 'Workshop02'
+      def resourceGroup = 'gnew'
+      def webAppName = 'workshop74'
       // login Azure
       withCredentials([usernamePassword(credentialsId: 'be20c224-82f1-431c-b123-96d4939a7a9c', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
        sh '''
